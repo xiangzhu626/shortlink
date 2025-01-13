@@ -1,42 +1,56 @@
-const db = require('../config/database');
 const bcrypt = require('bcryptjs');
 
-async function initDatabase() {
+async function initDatabase(db) {
     return new Promise((resolve, reject) => {
         db.serialize(async () => {
             try {
                 // 创建用户表
-                await db.run(`CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    email TEXT UNIQUE NOT NULL,
-                    password TEXT NOT NULL,
-                    role TEXT DEFAULT 'user',
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )`);
+                await new Promise((resolve, reject) => {
+                    db.run(`CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT UNIQUE NOT NULL,
+                        email TEXT UNIQUE NOT NULL,
+                        password TEXT NOT NULL,
+                        role TEXT DEFAULT 'user',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )`, (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+                });
 
                 // 创建短链接表
-                await db.run(`CREATE TABLE IF NOT EXISTS urls (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER,
-                    original_url TEXT NOT NULL,
-                    short_code TEXT UNIQUE NOT NULL,
-                    password TEXT,
-                    status TEXT DEFAULT 'active',
-                    expires_at DATETIME,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(user_id) REFERENCES users(id)
-                )`);
+                await new Promise((resolve, reject) => {
+                    db.run(`CREATE TABLE IF NOT EXISTS urls (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER,
+                        original_url TEXT NOT NULL,
+                        short_code TEXT UNIQUE NOT NULL,
+                        password TEXT,
+                        status TEXT DEFAULT 'active',
+                        expires_at DATETIME,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY(user_id) REFERENCES users(id)
+                    )`, (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+                });
 
                 // 创建访问记录表
-                await db.run(`CREATE TABLE IF NOT EXISTS visits (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    url_id INTEGER NOT NULL,
-                    visitor_ip TEXT,
-                    user_agent TEXT,
-                    visited_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (url_id) REFERENCES urls(id)
-                )`);
+                await new Promise((resolve, reject) => {
+                    db.run(`CREATE TABLE IF NOT EXISTS visits (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        url_id INTEGER NOT NULL,
+                        visitor_ip TEXT,
+                        user_agent TEXT,
+                        visited_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (url_id) REFERENCES urls(id)
+                    )`, (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+                });
 
                 // 检查是否需要创建默认管理员
                 const adminExists = await new Promise((resolve, reject) => {
@@ -48,10 +62,16 @@ async function initDatabase() {
 
                 if (!adminExists) {
                     const hashedPassword = await bcrypt.hash('admin123', 10);
-                    await db.run(
-                        'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
-                        ['admin', 'admin@example.com', hashedPassword, 'admin']
-                    );
+                    await new Promise((resolve, reject) => {
+                        db.run(
+                            'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+                            ['admin', 'admin@example.com', hashedPassword, 'admin'],
+                            (err) => {
+                                if (err) reject(err);
+                                else resolve();
+                            }
+                        );
+                    });
                     console.log('默认管理员账号创建成功');
                 }
 
@@ -63,11 +83,6 @@ async function initDatabase() {
             }
         });
     });
-}
-
-// 如果是直接运行此文件，则执行初始化
-if (require.main === module) {
-    initDatabase().catch(console.error);
 }
 
 module.exports = initDatabase; 
