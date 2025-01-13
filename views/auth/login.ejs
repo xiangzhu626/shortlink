@@ -51,6 +51,12 @@
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    // 获取表单数据前先打印一下，确认数据
+    console.log('登录表单数据:', {
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+    });
+    
     const submitBtn = document.getElementById('submitBtn');
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
@@ -71,12 +77,13 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         });
 
         const data = await response.json();
-
+        
         if (response.ok) {
-            // 登录成功
-            window.location.href = '/dashboard';
+            showSuccess('登录成功！');
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 1500);
         } else {
-            // 登录失败
             showError(data.error || '登录失败');
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
@@ -88,4 +95,10 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         submitBtn.innerHTML = originalText;
     }
 });
+
+// 如果有上次注册的用户名，自动填充
+const lastUsername = localStorage.getItem('lastUsername');
+if (lastUsername) {
+    document.getElementById('username').value = lastUsername;
+}
 </script> 

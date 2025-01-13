@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pageController = require('../controllers/pageController');
 const auth = require('../middleware/auth');
+const authRouter = require('./auth');
 
 // 登录和注册页面 - 不需要认证
 router.get('/login', pageController.getLoginPage);

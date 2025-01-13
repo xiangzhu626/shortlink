@@ -12,43 +12,16 @@ async function initDatabase(db) {
                         email TEXT UNIQUE NOT NULL,
                         password TEXT NOT NULL,
                         role TEXT DEFAULT 'user',
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )`, (err) => {
-                        if (err) reject(err);
-                        else resolve();
-                    });
-                });
-
-                // 创建短链接表
-                await new Promise((resolve, reject) => {
-                    db.run(`CREATE TABLE IF NOT EXISTS urls (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER,
-                        original_url TEXT NOT NULL,
-                        short_code TEXT UNIQUE NOT NULL,
-                        password TEXT,
-                        status TEXT DEFAULT 'active',
-                        expires_at DATETIME,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY(user_id) REFERENCES users(id)
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                     )`, (err) => {
-                        if (err) reject(err);
-                        else resolve();
-                    });
-                });
-
-                // 创建访问记录表
-                await new Promise((resolve, reject) => {
-                    db.run(`CREATE TABLE IF NOT EXISTS visits (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        url_id INTEGER NOT NULL,
-                        visitor_ip TEXT,
-                        user_agent TEXT,
-                        visited_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (url_id) REFERENCES urls(id)
-                    )`, (err) => {
-                        if (err) reject(err);
-                        else resolve();
+                        if (err) {
+                            console.error('创建用户表失败:', err);
+                            reject(err);
+                        } else {
+                            console.log('用户表创建成功');
+                            resolve();
+                        }
                     });
                 });
 
@@ -68,11 +41,13 @@ async function initDatabase(db) {
                             ['admin', 'admin@example.com', hashedPassword, 'admin'],
                             (err) => {
                                 if (err) reject(err);
-                                else resolve();
+                                else {
+                                    console.log('默认管理员账号创建成功');
+                                    resolve();
+                                }
                             }
                         );
                     });
-                    console.log('默认管理员账号创建成功');
                 }
 
                 console.log('数据库初始化完成');
