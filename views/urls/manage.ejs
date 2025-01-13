@@ -1,0 +1,266 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">短链接管理</h1>
+        <p class="mt-1 text-sm text-gray-500">在这里管理您的所有短链接。</p>
+    </div>
+
+    <!-- 链接列表 -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul class="divide-y divide-gray-200" id="urlList">
+            <li class="p-4 text-center text-gray-500">
+                <i class="fas fa-circle-notch fa-spin mr-2"></i>加载中...
+            </li>
+        </ul>
+    </div>
+
+    <!-- 编辑弹窗 -->
+    <div id="editModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">编辑短链接</h3>
+                </div>
+                <form id="editForm" class="p-6">
+                    <input type="hidden" id="editUrlId">
+                    
+                    <!-- 原始链接（只读） -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">原始链接</label>
+                        <input type="text" id="editOriginalUrl" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" readonly>
+                    </div>
+
+                    <!-- 短码（只读） -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">短码</label>
+                        <input type="text" id="editShortCode" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50" readonly>
+                    </div>
+
+                    <!-- 访问密码 -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">访问密码</label>
+                        <input type="password" id="editPassword" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <p class="mt-1 text-xs text-gray-500">留空表示无需密码</p>
+                    </div>
+
+                    <!-- 过期时间 -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">过期时间</label>
+                        <input type="datetime-local" id="editExpiresAt" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <p class="mt-1 text-xs text-gray-500">留空表示永不过期</p>
+                    </div>
+
+                    <!-- 状态 -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700">状态</label>
+                        <select id="editStatus" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="active">启用</option>
+                            <option value="disabled">禁用</option>
+                        </select>
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeEditModal()" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            取消
+                        </button>
+                        <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 加载短链接列表
+async function loadUrls() {
+    try {
+        const token = auth.getToken();
+        const response = await fetch('/api/urls', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('加载失败');
+        }
+
+        const urls = await response.json();
+        const urlList = document.getElementById('urlList');
+
+        if (urls.length === 0) {
+            urlList.innerHTML = `
+                <li class="p-4 text-center text-gray-500">
+                    <p>暂无短链接</p>
+                    <a href="/urls/create" class="text-blue-600 hover:text-blue-500">
+                        <i class="fas fa-plus mr-1"></i>创建一个
+                    </a>
+                </li>
+            `;
+            return;
+        }
+
+        urlList.innerHTML = urls.map(url => `
+            <li class="p-4 hover:bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-3">
+                            <a href="${url.shortUrl}" target="_blank" 
+                               class="text-blue-600 hover:text-blue-500 font-medium">
+                                ${url.shortUrl}
+                            </a>
+                            <button onclick="copyUrl('${url.shortUrl}')" 
+                                    class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="mt-1">
+                            <p class="text-sm text-gray-500 truncate">
+                                原始链接：${url.original_url}
+                            </p>
+                        </div>
+                        <div class="mt-2 flex items-center text-sm text-gray-500 space-x-4">
+                            <span>
+                                <i class="fas fa-clock mr-1"></i>
+                                ${url.expires_at ? formatDate(url.expires_at) : '永不过期'}
+                            </span>
+                            <span>
+                                <i class="fas fa-shield-alt mr-1"></i>
+                                ${url.password ? '已加密' : '公开'}
+                            </span>
+                            <span>
+                                <i class="fas fa-eye mr-1"></i>
+                                ${url.clicks || 0} 次点击
+                            </span>
+                        </div>
+                    </div>
+                    <div class="ml-4 flex items-center space-x-3">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                   ${url.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                            ${url.status === 'active' ? '启用' : '禁用'}
+                        </span>
+                        <button onclick="editUrl(${JSON.stringify(url).replace(/"/g, '&quot;')})" 
+                                class="text-gray-400 hover:text-blue-600">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteUrl('${url.id}')" 
+                                class="text-gray-400 hover:text-red-600">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </li>
+        `).join('');
+    } catch (error) {
+        console.error('加载短链接列表失败:', error);
+        showError('加载失败，请稍后重试');
+    }
+}
+
+// 编辑短链接
+function editUrl(url) {
+    document.getElementById('editUrlId').value = url.id;
+    document.getElementById('editOriginalUrl').value = url.original_url;
+    document.getElementById('editShortCode').value = url.short_code;
+    document.getElementById('editPassword').value = url.password || '';
+    document.getElementById('editExpiresAt').value = url.expires_at ? url.expires_at.slice(0, 16) : '';
+    document.getElementById('editStatus').value = url.status;
+    
+    document.getElementById('editModal').classList.remove('hidden');
+}
+
+// 关闭编辑弹窗
+function closeEditModal() {
+    document.getElementById('editModal').classList.add('hidden');
+    document.getElementById('editForm').reset();
+}
+
+// 提交编辑表单
+document.getElementById('editForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const urlId = document.getElementById('editUrlId').value;
+    const formData = {
+        password: document.getElementById('editPassword').value.trim() || null,
+        expiresAt: document.getElementById('editExpiresAt').value || null,
+        status: document.getElementById('editStatus').value
+    };
+
+    try {
+        const token = auth.getToken();
+        const response = await fetch(`/api/urls/${urlId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || '更新失败');
+        }
+
+        showSuccess('更新成功');
+        closeEditModal();
+        loadUrls();
+    } catch (error) {
+        console.error('更新短链接失败:', error);
+        showError(error.message || '更新失败，请稍后重试');
+    }
+});
+
+// 删除短链接
+async function deleteUrl(urlId) {
+    if (!confirm('确定要删除这个短链接吗？此操作不可恢复。')) {
+        return;
+    }
+
+    try {
+        const token = auth.getToken();
+        const response = await fetch(`/api/urls/${urlId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('删除失败');
+        }
+
+        showSuccess('删除成功');
+        loadUrls();
+    } catch (error) {
+        console.error('删除短链接失败:', error);
+        showError('删除失败，请稍后重试');
+    }
+}
+
+// 格式化日期
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// 复制链接
+function copyUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showSuccess('链接已复制到剪贴板');
+    }).catch(() => {
+        showError('复制失败，请手动复制');
+    });
+}
+
+// 页面加载完成后加载数据
+loadUrls();
+</script> 

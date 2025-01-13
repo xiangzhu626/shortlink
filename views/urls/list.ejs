@@ -1,0 +1,122 @@
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-gray-900">短链接列表</h2>
+            <a href="/urls/create" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                <i class="fas fa-plus mr-2"></i>
+                新建短链接
+            </a>
+        </div>
+        <div class="border-t border-gray-200">
+            <div id="urlList" class="divide-y divide-gray-200">
+                <!-- 列表内容将通过 JavaScript 动态加载 -->
+                <div class="animate-pulse p-4 text-center text-gray-500">
+                    <i class="fas fa-circle-notch fa-spin mr-2"></i>
+                    加载中...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 格式化日期
+function formatDate(dateString) {
+    if (!dateString) return '永久有效';
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// 加载短链接列表
+async function loadUrlList() {
+    try {
+        const token = auth.getToken();
+        const response = await fetch('/api/urls', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('加载失败');
+        }
+
+        const urls = await response.json();
+        const urlList = document.getElementById('urlList');
+        
+        if (urls.length === 0) {
+            urlList.innerHTML = `
+                <div class="p-4 text-center text-gray-500">
+                    <p>暂无短链接</p>
+                    <a href="/urls/create" class="text-blue-600 hover:text-blue-500">
+                        <i class="fas fa-plus mr-1"></i>创建一个
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        urlList.innerHTML = urls.map(url => `
+            <div class="p-4 hover:bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-3">
+                            <a href="${url.shortUrl}" target="_blank" 
+                               class="text-blue-600 hover:text-blue-500 font-medium truncate">
+                                ${url.shortUrl}
+                            </a>
+                            <button onclick="copyUrl('${url.shortUrl}')" 
+                                    class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="mt-1 text-sm text-gray-500 truncate">
+                            原始链接：<a href="${url.original_url}" target="_blank" 
+                                      class="hover:text-gray-700">${url.original_url}</a>
+                        </div>
+                    </div>
+                    <div class="ml-4 flex-shrink-0 flex items-center space-x-4">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-clock mr-1"></i>
+                            ${formatDate(url.expires_at)}
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            ${url.password ? '已加密' : '公开'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('加载短链接列表失败:', error);
+        document.getElementById('urlList').innerHTML = `
+            <div class="p-4 text-center text-red-500">
+                <p>加载失败，请稍后重试</p>
+                <button onclick="loadUrlList()" 
+                        class="mt-2 text-blue-600 hover:text-blue-500">
+                    <i class="fas fa-redo mr-1"></i>重试
+                </button>
+            </div>
+        `;
+    }
+}
+
+// 复制链接
+function copyUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showSuccess('链接已复制到剪贴板');
+    }).catch(() => {
+        showError('复制失败，请手动复制');
+    });
+}
+
+// 页面加载完成后加载列表
+loadUrlList();
+</script> 

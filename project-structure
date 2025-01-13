@@ -1,0 +1,15 @@
+short-url-system/
+├── client/                 # 前端代码
+│   ├── css/
+│   ├── js/
+│   └── images/
+├── server/                 # 后端代码
+│   ├── config/            # 配置文件
+│   ├── controllers/       # 控制器
+│   ├── models/           # 数据模型
+│   ├── routes/           # 路由
+│   ├── middleware/       # 中间件
+│   ├── utils/            # 工具函数
+│   └── database/         # 数据库相关
+├── public/               # 静态资源
+└── views/               # 页面模板 

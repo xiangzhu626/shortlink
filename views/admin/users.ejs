@@ -1,0 +1,486 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">用户管理</h1>
+            <p class="mt-1 text-sm text-gray-500">管理系统中的所有用户账号</p>
+        </div>
+        <div class="flex space-x-4">
+            <!-- 搜索框 -->
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="搜索用户名或邮箱"
+                    class="w-64 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 pl-10">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+            </div>
+            
+            <!-- 角色筛选 -->
+            <select id="roleFilter" 
+                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <option value="">所有角色</option>
+                <option value="admin">管理员</option>
+                <option value="user">普通用户</option>
+            </select>
+            
+            <!-- 状态筛选 -->
+            <select id="statusFilter"
+                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <option value="">所有状态</option>
+                <option value="active">正常</option>
+                <option value="disabled">禁用</option>
+                <option value="pending">待验证</option>
+                <option value="locked">已锁定</option>
+            </select>
+        </div>
+        <button onclick="showCreateUserModal()" 
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+            <i class="fas fa-user-plus mr-2"></i>
+            创建用户
+        </button>
+    </div>
+
+    <!-- 用户列表 -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户名</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">邮箱</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200" id="userList">
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                        <i class="fas fa-circle-notch fa-spin mr-2"></i>加载中...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 创建用户弹窗 -->
+    <div id="createUserModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">创建新用户</h3>
+                </div>
+                <form id="createUserForm" class="p-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">用户名</label>
+                            <input type="text" name="username" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">邮箱</label>
+                            <input type="email" name="email" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">密码</label>
+                            <input type="password" name="password" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">角色</label>
+                            <select name="role" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="user">普通用户</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" onclick="hideCreateUserModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            取消
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                            创建
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑用户弹窗 -->
+    <div id="editUserModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-lg w-full">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg font-medium text-gray-900">编辑用户</h3>
+                    <button onclick="hideEditUserModal()" class="text-gray-400 hover:text-gray-500">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form id="editUserForm" class="p-6">
+                    <input type="hidden" id="editUserId">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">用户名</label>
+                            <input type="text" id="editUsername" disabled
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">邮箱</label>
+                            <input type="email" id="editEmail" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">角色</label>
+                            <select id="editRole" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="user">普通用户</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">状态</label>
+                            <select id="editStatus" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="active">正常</option>
+                                <option value="disabled">禁用</option>
+                                <option value="pending">待验证</option>
+                                <option value="locked">已锁定</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" onclick="hideEditUserModal()"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            取消
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                            保存更改
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 存储所有用户数据
+let allUsers = [];
+
+// 加载用户列表
+async function loadUsers() {
+    try {
+        const token = auth.getToken();
+        const response = await fetch('/api/admin/users', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('加载失败');
+        }
+
+        allUsers = await response.json();
+        filterUsers();
+    } catch (error) {
+        console.error('加载用户列表失败:', error);
+        showError('加载用户列表失败');
+    }
+}
+
+// 搜索和筛选用户
+function filterUsers() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const roleFilter = document.getElementById('roleFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+
+    const filteredUsers = allUsers.filter(user => {
+        const matchesSearch = 
+            user.username.toLowerCase().includes(searchTerm) ||
+            user.email.toLowerCase().includes(searchTerm);
+        const matchesRole = !roleFilter || user.role === roleFilter;
+        const matchesStatus = !statusFilter || user.status === statusFilter;
+
+        return matchesSearch && matchesRole && matchesStatus;
+    });
+
+    renderUsers(filteredUsers);
+}
+
+// 渲染用户列表
+function renderUsers(users) {
+    const userList = document.getElementById('userList');
+    
+    if (users.length === 0) {
+        userList.innerHTML = `
+            <tr>
+                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                    ${allUsers.length === 0 ? '暂无用户数据' : '没有匹配的搜索结果'}
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    userList.innerHTML = users.map(user => `
+        <tr>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                    <div class="text-sm font-medium text-gray-900">${user.username}</div>
+                </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-gray-900">${user.email}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                    ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}">
+                    ${user.role === 'admin' ? '管理员' : '普通用户'}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusStyle(user.status)}">
+                    ${getStatusText(user.status)}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                ${formatDate(user.created_at)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button onclick="showEditUser(${user.id})" class="text-blue-600 hover:text-blue-900 mr-3" title="编辑">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="resetPassword(${user.id})" class="text-yellow-600 hover:text-yellow-900 mr-3" title="重置密码">
+                    <i class="fas fa-key"></i>
+                </button>
+                <button onclick="deleteUser(${user.id})" class="text-red-600 hover:text-red-900" title="删除">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// 添加搜索和筛选事件监听
+document.getElementById('searchInput').addEventListener('input', debounce(filterUsers, 300));
+document.getElementById('roleFilter').addEventListener('change', filterUsers);
+document.getElementById('statusFilter').addEventListener('change', filterUsers);
+
+// 防抖函数
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// 显示创建用户弹窗
+function showCreateUserModal() {
+    document.getElementById('createUserModal').classList.remove('hidden');
+}
+
+// 隐藏创建用户弹窗
+function hideCreateUserModal() {
+    document.getElementById('createUserModal').classList.add('hidden');
+    document.getElementById('createUserForm').reset();
+}
+
+// 创建用户
+document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {
+        username: formData.get('username'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        role: formData.get('role')
+    };
+
+    try {
+        const token = auth.getToken();
+        const response = await fetch('/api/admin/users', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || '创建失败');
+        }
+
+        showSuccess('用户创建成功');
+        hideCreateUserModal();
+        loadUsers();
+    } catch (error) {
+        console.error('创建用户失败:', error);
+        showError(error.message);
+    }
+});
+
+// 删除用户
+async function deleteUser(userId) {
+    if (!confirm('确定要删除这个用户吗？此操作不可恢复。')) {
+        return;
+    }
+
+    try {
+        const token = auth.getToken();
+        const response = await fetch(`/api/admin/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('删除失败');
+        }
+
+        showSuccess('用户删除成功');
+        loadUsers();
+    } catch (error) {
+        console.error('删除用户失败:', error);
+        showError('删除用户失败');
+    }
+}
+
+// 重置密码
+async function resetPassword(userId) {
+    const newPassword = prompt('请输入新密码：');
+    if (!newPassword) return;
+
+    try {
+        const token = auth.getToken();
+        const response = await fetch(`/api/admin/users/${userId}/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ newPassword })
+        });
+
+        if (!response.ok) {
+            throw new Error('重置密码失败');
+        }
+
+        showSuccess('密码重置成功');
+    } catch (error) {
+        console.error('重置密码失败:', error);
+        showError('重置密码失败');
+    }
+}
+
+// 页面加载完成后加载用户列表
+loadUsers();
+
+function getStatusStyle(status) {
+    switch (status) {
+        case 'active':
+            return 'bg-green-100 text-green-800';
+        case 'disabled':
+            return 'bg-red-100 text-red-800';
+        case 'pending':
+            return 'bg-yellow-100 text-yellow-800';
+        case 'locked':
+            return 'bg-gray-100 text-gray-800';
+        default:
+            return 'bg-gray-100 text-gray-800';
+    }
+}
+
+function getStatusText(status) {
+    switch (status) {
+        case 'active':
+            return '正常';
+        case 'disabled':
+            return '禁用';
+        case 'pending':
+            return '待验证';
+        case 'locked':
+            return '已锁定';
+        default:
+            return '未知';
+    }
+}
+
+// 显示编辑用户弹窗
+function showEditUser(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return;
+
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editUsername').value = user.username;
+    document.getElementById('editEmail').value = user.email;
+    document.getElementById('editRole').value = user.role;
+    document.getElementById('editStatus').value = user.status;
+
+    document.getElementById('editUserModal').classList.remove('hidden');
+}
+
+// 隐藏编辑用户弹窗
+function hideEditUserModal() {
+    document.getElementById('editUserModal').classList.add('hidden');
+    document.getElementById('editUserForm').reset();
+}
+
+// 编辑用户表单提交
+document.getElementById('editUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const userId = document.getElementById('editUserId').value;
+    const data = {
+        email: document.getElementById('editEmail').value,
+        role: document.getElementById('editRole').value,
+        status: document.getElementById('editStatus').value
+    };
+
+    try {
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>保存中...';
+
+        const token = auth.getToken();
+        const response = await fetch(`/api/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || '更新失败');
+        }
+
+        showSuccess('用户更新成功');
+        hideEditUserModal();
+        loadUsers();
+    } catch (error) {
+        console.error('更新用户失败:', error);
+        showError(error.message);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    }
+});
+</script> 

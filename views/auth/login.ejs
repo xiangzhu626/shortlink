@@ -1,0 +1,91 @@
+<div class="min-h-screen flex flex-col justify-center bg-gradient-to-br from-blue-50 to-indigo-50 py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 class="text-center text-3xl font-extrabold text-gray-900">
+            短链接管理系统
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+            请登录您的账号
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10 border border-gray-100">
+            <form method="POST" action="/api/auth/login" class="space-y-6" id="loginForm">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">
+                        用户名
+                    </label>
+                    <input type="text" name="username" id="username" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">
+                        密码
+                    </label>
+                    <input type="password" name="password" id="password" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div>
+                    <button type="submit" id="submitBtn"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        登录
+                    </button>
+                </div>
+
+                <div class="text-center">
+                    <a href="/register" 
+                        class="text-sm font-medium text-blue-600 hover:text-blue-500 flex items-center justify-center">
+                        <i class="fas fa-user-plus mr-1"></i>
+                        还没有账号？立即注册
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>登录中...';
+
+    try {
+        const formData = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
+
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // 登录成功
+            window.location.href = '/dashboard';
+        } else {
+            // 登录失败
+            showError(data.error || '登录失败');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    } catch (error) {
+        console.error('登录错误:', error);
+        showError('登录失败，请稍后重试');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+});
+</script> 

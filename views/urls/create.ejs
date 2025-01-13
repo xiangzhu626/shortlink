@@ -1,0 +1,249 @@
+<noscript>
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <strong class="font-bold">JavaScript 已禁用！</strong>
+        <span class="block sm:inline">请启用 JavaScript 以使用此功能。</span>
+    </div>
+</noscript>
+
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow-sm rounded-lg p-6">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">生成短链接</h2>
+        
+        <form id="createUrlForm" class="space-y-6" onsubmit="return false">
+            <!-- 原始链接 -->
+            <div>
+                <label for="originalUrl" class="block text-sm font-medium text-gray-700">
+                    原始链接
+                </label>
+                <div class="mt-1">
+                    <input type="url" name="originalUrl" id="originalUrl" required
+                        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md 
+                        shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 
+                        focus:border-blue-500 sm:text-sm" placeholder="请输入需要缩短的链接">
+                </div>
+            </div>
+
+            <!-- 自定义短码 -->
+            <div>
+                <label for="customCode" class="block text-sm font-medium text-gray-700">
+                    自定义短码（可选）
+                </label>
+                <div class="mt-1">
+                    <input type="text" name="customCode" id="customCode"
+                        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md 
+                        shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 
+                        focus:border-blue-500 sm:text-sm" placeholder="输入自定义短码">
+                </div>
+                <p class="mt-1 text-sm text-gray-500">如不填写将自动生成</p>
+            </div>
+
+            <!-- 访问密码 -->
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">
+                    访问密码（可选）
+                </label>
+                <div class="mt-1">
+                    <input type="password" name="password" id="password"
+                        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md 
+                        shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 
+                        focus:border-blue-500 sm:text-sm" placeholder="设置访问密码">
+                </div>
+                <p class="mt-1 text-sm text-gray-500">如需设置访问密码请填写</p>
+            </div>
+
+            <!-- 过期时间 -->
+            <div>
+                <label for="expiresAt" class="block text-sm font-medium text-gray-700">
+                    过期时间（可选）
+                </label>
+                <div class="mt-1">
+                    <input type="datetime-local" name="expiresAt" id="expiresAt"
+                        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md 
+                        shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 
+                        focus:border-blue-500 sm:text-sm">
+                </div>
+                <p class="mt-1 text-sm text-gray-500">设置链接的过期时间</p>
+            </div>
+
+            <!-- 提交按钮 -->
+            <div>
+                <button type="button" id="submitBtn"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md 
+                    shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 
+                    transition duration-150 ease-in-out">
+                    <i class="fas fa-link mr-2"></i>
+                    生成短链接
+                </button>
+            </div>
+        </form>
+
+        <!-- 结果显示区域 -->
+        <div id="resultArea" class="mt-6 hidden">
+            <div class="bg-gray-50 p-4 rounded-md">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">生成成功！</h3>
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="shortUrl" readonly
+                        class="flex-1 p-2 border border-gray-300 rounded-md bg-white shadow-sm 
+                        focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <button onclick="copyToClipboard()"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md 
+                        shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 
+                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-copy mr-2"></i>
+                        复制
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+console.log('初始化页面脚本');
+
+// 直接绑定事件，不使用 DOMContentLoaded
+const submitBtn = document.getElementById('submitBtn');
+if (submitBtn) {
+    console.log('找到提交按钮，绑定事件');
+    submitBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        console.log('提交按钮被点击');
+
+        // 保存原始按钮状态
+        const originalText = submitBtn.innerHTML;
+
+        try {
+            // 获取表单数据
+            const formData = {
+                originalUrl: document.getElementById('originalUrl').value.trim(),
+                customCode: document.getElementById('customCode').value.trim() || undefined,
+                password: document.getElementById('password').value.trim() || undefined,
+                expiresAt: document.getElementById('expiresAt').value || undefined
+            };
+
+            console.log('准备发送的数据:', formData);
+
+            // 验证原始URL
+            if (!formData.originalUrl) {
+                showError('请输入需要缩短的链接');
+                return;
+            }
+
+            // 添加 URL 格式验证
+            if (!isValidUrl(formData.originalUrl)) {
+                showError('请输入有效的URL地址（必须以 http:// 或 https:// 开头）');
+                return;
+            }
+
+            // 显示加载状态
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>生成中...';
+
+            // 发送API请求
+            const token = auth.getToken();
+            console.log('使用token:', token);
+
+            const response = await fetch('/api/urls', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+
+            console.log('服务器响应状态:', response.status);
+            const data = await response.json();
+            console.log('服务器响应数据:', data);
+
+            if (response.ok) {
+                // 显示结果
+                const resultArea = document.getElementById('resultArea');
+                const shortUrlInput = document.getElementById('shortUrl');
+                
+                resultArea.classList.remove('hidden');
+                shortUrlInput.value = data.shortUrl;
+                
+                // 清空表单
+                document.getElementById('createUrlForm').reset();
+                
+                // 使用更友好的成功提示
+                showSuccess('短链接生成成功！');
+
+                // 恢复按钮状态
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            } else {
+                throw new Error(data.error || '生成失败');
+            }
+        } catch (error) {
+            console.error('生成短链接错误:', error);
+            alert(error.message || '生成失败，请稍后重试');
+            
+            // 恢复按钮状态
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+} else {
+    console.error('未找到提交按钮');
+}
+
+// 复制功能
+window.copyToClipboard = function() {
+    const shortUrl = document.getElementById('shortUrl');
+    shortUrl.select();
+    document.execCommand('copy');
+    
+    const button = document.querySelector('button[onclick="copyToClipboard()"]');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check mr-2"></i>已复制';
+    setTimeout(() => {
+        button.innerHTML = originalText;
+    }, 2000);
+};
+
+// 打印调试信息
+console.log('页面加载完成，当前状态:', {
+    submitButton: !!submitBtn,
+    token: auth.getToken()
+});
+
+// 在 script 标签中添加 URL 验证函数
+function isValidUrl(string) {
+    try {
+        const url = new URL(string);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (err) {
+        return false;
+    }
+}
+
+// 添加提示函数
+function showSuccess(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
+    alertDiv.innerHTML = `
+        <span class="block sm:inline">${message}</span>
+        <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+            <i class="fas fa-times"></i>
+        </span>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 3000);
+}
+
+function showError(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
+    alertDiv.innerHTML = `
+        <span class="block sm:inline">${message}</span>
+        <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+            <i class="fas fa-times"></i>
+        </span>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 3000);
+}
+</script> 
