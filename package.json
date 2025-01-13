@@ -17,6 +17,8 @@
   "scripts": {
     "start": "node server/app.js",
     "dev": "nodemon server/app.js",
+    "build": "npm install",
+    "vercel-build": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
